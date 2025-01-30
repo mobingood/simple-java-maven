@@ -1,29 +1,36 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.0'
-            args '-v /root/.m2:/root/.m2'
-        }
+    agent any
+
+    environment {
+        DOCKER_HOST = "unix:///var/run/docker.sock"
     }
+
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/jenkins-docs/simple-java-maven-app.git'
+            }
+        }
+
         stage('Build') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                sh 'mvn clean package'
             }
         }
-        stage('Test') {
+
+        stage('Docker Build') {
             steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+                script {
+                    docker.build("my-java-app:${env.BUILD_ID}")
                 }
             }
         }
-        stage('Deliver') {
+
+        stage('Docker Run') {
             steps {
-                sh './jenkins/scripts/deliver.sh'
+                script {
+                    docker.image("my-java-app:${env.BUILD_ID}").run()
+                }
             }
         }
     }
