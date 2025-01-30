@@ -1,14 +1,10 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_HOST = "unix:///var/run/docker.sock"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/jenkins-docs/simple-java-maven-app.git'
+                git branch: 'main', url: 'https://github.com/mobingood/simple-java-maven.git'
             }
         }
 
@@ -18,19 +14,15 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Test') {
             steps {
-                script {
-                    docker.build("my-java-app:${env.BUILD_ID}")
-                }
+                sh 'mvn test'
             }
         }
 
-        stage('Docker Run') {
+        stage('Archive Artifacts') {
             steps {
-                script {
-                    docker.image("my-java-app:${env.BUILD_ID}").run()
-                }
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
     }
