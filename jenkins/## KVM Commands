@@ -1,0 +1,73 @@
+## KVM Commands 
+
+1. `sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils` - Install KVM and necessary packages on Debian/Ubuntu.
+2. `sudo yum install -y qemu-kvm libvirt libvirt-client virt-install` - Install KVM and dependencies on RHEL/CentOS.
+3. `sudo systemctl enable --now libvirtd` - Enable and start the libvirt service.
+4. `sudo systemctl status libvirtd` - Check the status of the libvirt daemon.
+5. `virsh list --all` - List all virtual machines.
+6. `virt-host-validate` - Check if the system supports KVM virtualization.
+7. `kvm-ok` - Verify if the CPU supports KVM (Ubuntu-specific).
+8. `sudo usermod -aG libvirt $(whoami)` - Add the current user to the libvirt group.
+9. `lsmod | grep kvm` - Check if the KVM module is loaded.
+10. `cat /proc/cpuinfo | grep -E "vmx|svm"` - Check if the CPU supports hardware virtualization.
+11. `virt-install --name=myvm --vcpus=2 --memory=2048 --cdrom=/path/to/iso --disk size=20 --os-variant=ubuntu20.04 --network bridge=virbr0` - Create a new VM with specified parameters.
+12. `qemu-img create -f qcow2 /var/lib/libvirt/images/myvm.qcow2 20G` - Create a 20GB QCOW2 disk image.
+13. `virt-install --name=myvm --ram=4096 --vcpus=2 --disk path=/var/lib/libvirt/images/myvm.qcow2,size=20 --cdrom /path/to/iso --os-type=linux --network bridge=virbr0` - Install a VM with a pre-defined disk and network bridge.
+14. `virt-clone --original myvm --name myvm-clone --file /var/lib/libvirt/images/myvm-clone.qcow2` - Clone an existing VM.
+15. `virt-install --name=myvm --memory=2048 --vcpus=2 --disk path=/var/lib/libvirt/images/myvm.qcow2,format=qcow2 --network network=default --graphics vnc --noautoconsole` - Create a VM with VNC support.
+16. `qemu-system-x86_64 -enable-kvm -m 2048 -smp 2 -drive file=myvm.qcow2,format=qcow2` - Run a VM using QEMU directly.
+17. `virt-install --name=test-vm --ram=1024 --disk size=10 --location=/path/to/iso --graphics none --extra-args='console=ttyS0'` - Create a headless VM with serial console output.
+18. `virt-builder ubuntu-20.04 --size 10G --output ubuntu.qcow2` - Build a pre-configured Ubuntu 20.04 image.
+19. `virt-sysprep -a /var/lib/libvirt/images/myvm.qcow2` - Clean up a VM image for cloning.
+20. `virt-resize --expand /dev/sda1 old-disk.qcow2 new-disk.qcow2` - Resize a VM disk and expand a partition.
+21. `virsh start myvm` - Start a virtual machine.
+22. `virsh reboot myvm` - Reboot a VM.
+23. `virsh shutdown myvm` - Gracefully shut down a VM.
+24. `virsh destroy myvm` - Force shutdown a VM.
+25. `virsh undefine myvm` - Remove a VM from libvirt management.
+26. `virsh autostart myvm` - Enable VM to start automatically on boot.
+27. `virsh autostart --disable myvm` - Disable auto-start for a VM.
+28. `virsh suspend myvm` - Suspend a VM.
+29. `virsh resume myvm` - Resume a suspended VM.
+30. `virsh dominfo myvm` - Get VM details.
+31. `virsh domstate myvm` - Check the current state of a VM.
+32. `virsh dumpxml myvm` - Display VM configuration in XML format.
+33. `virsh edit myvm` - Edit a VM configuration.
+34. `virsh setmem myvm 2048M --live` - Adjust VM memory while running.
+35. `virsh setvcpus myvm 4 --live` - Change the number of vCPUs dynamically.
+36. `virsh console myvm` - Access the VM console.
+37. `virsh snapshot-list myvm` - List VM snapshots.
+38. `virsh snapshot-create-as myvm snapshot1 "Before update"` - Create a snapshot.
+39. `virsh snapshot-revert myvm snapshot1` - Revert to a previous snapshot.
+40. `virsh snapshot-delete myvm snapshot1` - Delete a snapshot.
+41. `virsh net-list --all` - List available networks.
+42. `virsh net-start default` - Start the default network.
+43. `virsh net-autostart default` - Set network to start on boot.
+44. `virsh net-destroy default` - Stop a network.
+45. `virsh net-undefine default` - Remove a network configuration.
+46. `brctl show` - Show active bridges.
+47. `ip link add br0 type bridge` - Create a new network bridge.
+48. `ip link set dev br0 up` - Activate a network bridge.
+49. `ip addr add 192.168.1.1/24 dev br0` - Assign an IP to a bridge.
+50. `virsh iface-list` - List available network interfaces.
+51. `virsh iface-bridge eth0 br0` - Bridge a network interface.
+52. `virsh iface-destroy eth0` - Remove a network interface.
+53. `virsh attach-interface myvm network default --model virtio --live` - Attach a new network interface.
+54. `ip tuntap add dev tap0 mode tap` - Create a TAP interface.
+55. `ip link set tap0 up` - Bring up a TAP interface.
+56. `virsh net-update default add ip-dhcp-host "<host mac='52:54:00:12:34:56' name='vm1' ip='192.168.122.100'/>" --live --config` - Add a static DHCP reservation.
+57. `virsh vol-list --pool default` - List storage volumes.
+58. `virsh vol-create-as default myvm2.qcow2 20G --format qcow2` - Create a new disk volume.
+59. `virsh vol-delete myvm2.qcow2 --pool default` - Delete a disk volume.
+60. `virsh pool-list --all` - List storage pools.
+61. `virsh pool-start default` - Start the default storage pool.
+62. `virsh pool-refresh default` - Refresh a storage pool.
+63. `virsh pool-destroy default` - Stop a storage pool.
+64. `virsh pool-undefine default` - Remove a storage pool.
+65. `virsh attach-disk myvm /var/lib/libvirt/images/data.qcow2 vdb --live` - Attach a disk to a running VM.
+66. `virsh detach-disk myvm vdb --live` - Detach a disk from a running VM.
+67. `qemu-img info /var/lib/libvirt/images/myvm.qcow2` - Display disk information.
+68. `qemu-img convert -O qcow2 old.img new.qcow2` - Convert an image format.
+69. `qemu-img resize myvm.qcow2 +10G` - Increase disk size.
+70. `virt-manager` - Open the graphical KVM manager.
+

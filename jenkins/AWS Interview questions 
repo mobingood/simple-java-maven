@@ -1,0 +1,11 @@
+Types of Storage
+    Standard 
+    S3 Glacier 
+    Glacier Deep Archive
+
+ec2 
+s3 
+ebs 
+vpc 
+security_groups
+certificate renewal

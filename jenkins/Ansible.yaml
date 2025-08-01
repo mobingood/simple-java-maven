@@ -1,0 +1,171 @@
+all: 
+   children:
+      webservers:
+        children:
+           webservers_us:
+             hosts:
+                server1_us.com:
+                    ansible_host: 192.168.3.2
+                server2_us.com:
+                    ansible_host: 192.168.2.2
+           webservers_eu:
+             hosts:
+                server1_eu.com:
+                    ansible_host:10.12.2.2
+                server2_eu.com:
+                    ansible_host:10.12.2.3
+                    
+que 
+sort 
+select from linux from file
+
+
+ansible-playbook --syntax-check 
+ansible-playbook --check 
+ansible-playbook --diff
+ansible-lint playbook.yml is command to check systax error 
+ansible all(use hostgorup to chekc the host) --list-host
+ansible-vault encrypt_string --ask-vault-pass -name 'ansible_become_pass' 'password'
+ansible-vault encrypt enternal_vault_vars.yaml 
+ansible-paybook install-package --tags "install-package" --skip-tags "install-package" "all"
+ansible-galaxy init role_name
+
+
+--- 
+name: Install software
+hosts: all
+gather_facts: True
+serial: 2 ## is to run ansible on 2 servers at a time 
+      : 16%
+        24%
+strategy: free ## will execute task on all the server, but will not wait for finish result
+
+vars: 
+  packages:
+    - name: nginx
+      required: True
+    - name: mysql
+      required: True
+
+tasks:
+- name: install "{{ item.name}}"
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  when: item.required == True
+  loop: "{{ package }}"
+  tags:
+    - install-package
+
+another eg of looping -
+  with_dict:
+    james:
+      full_name: James Suprin
+    hayley:
+      full_name: Hayley Suprin
+
+
+to reg output to diff variable 
+
+- name : Exploring register 
+  command: hostname -s 
+  register: hostname_output
+- name : Show hostname_output
+  debug: 
+    var: hostname_output
+
+
+tasks:
+  - name: aws 
+    ec2-group
+      name: ansible 
+      description: Ansible securty ec2-group 
+      region: us-east-1
+      rules: 
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr: 0.0.0.0/0
+      
+
+tasks:
+  - name: Ec2 instance
+    ec2_instance:
+      key_name: ansible
+      name: 
+      security_group:
+      instance_type:
+      image_id: xxxxx
+      region: us-east-1
+      wait: True 
+      count: 20
+    
+    register: ec2-group 
+
+name: Patch Linux Servers
+
+  hosts: all
+  become: yes
+  vars:
+    reboot_required_file: "/var/run/reboot-required"  # For Ubuntu/Debian
+    os_family_map:
+      RedHat: "yum"
+      Debian: "apt"
+      Suse: "zypper"
+
+  tasks:
+    - name: Pre-Check - Verify disk space and uptime
+      command: df -h /
+      register: disk_space
+      changed_when: false
+
+    - name: Show Disk Space
+      debug:
+        var: disk_space.stdout_lines
+
+    - name: Update packages for Debian-based systems
+      apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update packages for RedHat-based systems
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Update packages for SUSE-based systems
+      zypper:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "Suse"
+
+    - name: Check if reboot is required
+      stat:
+        path: "{{ reboot_required_file }}"
+      register: reboot_required
+      when: ansible_os_family == "Debian"
+
+    - name: Reboot the server if needed (Debian-based)
+      reboot:
+      when: reboot_required.stat.exists
+
+    - name: Reboot the server if needed (RedHat-based)
+      command: needs-restarting -r
+      register: reboot_status
+      failed_when: reboot_status.rc not in [0,1]
+      notify: Reboot Now
+      when: ansible_os_family == "RedHat"
+
+  handlers:
+    - name: Reboot Now
+      reboot:
+        msg: "System rebooting for patching"
+        post_reboot_delay: 30
+        test_command: uptime
+

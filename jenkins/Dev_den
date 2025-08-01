@@ -1,0 +1,599 @@
+Here are answers to your questions across **Git**, **AWS**, **Kubernetes**, and **Jenkins**, structured by topic:
+
+---
+
+### ✅ GIT
+
+**1. What is Git branch strategy?**
+A Git branch strategy defines how branches are used in a project to streamline collaboration and development. Common strategies include:
+
+* **Git Flow**: Uses branches like `main`, `develop`, `feature`, `release`, `hotfix`.
+* **GitHub Flow**: Simple flow with `main` and feature branches.
+* **Trunk-Based Development**: Only one main branch (`main/master`), short-lived branches.
+
+**2. How many types of Git branches?**
+
+* **Main/Master** (production)
+* **Develop** (integration)
+* **Feature** (new features)
+* **Release** (pre-production)
+* **Hotfix** (urgent fixes)
+* **Bugfix** (minor fixes)
+
+**3. What is a hotfix branch?**
+It’s used to fix production bugs immediately. It branches off `main` and merges back into both `main` and `develop`.
+
+**4. If you push to the wrong branch, how do you fix it?**
+
+* Use `git reset HEAD~` or `git revert` to undo.
+* Use `git cherry-pick` to move commits to the correct branch.
+* Delete the commit from the wrong branch using `git reset --hard` if needed.
+
+**5. How do you push repo to a specific branch instead of root (default) branch?**
+
+```bash
+git push origin your-branch-name
+```
+
+**6. Difference between `git pull`, `git fetch`, `git get head`, `git`?**
+
+* `git fetch`: Fetches changes but doesn't merge.
+* `git pull`: Fetches and merges.
+* `git rev-parse HEAD`: Gets the latest commit hash.
+* `git`rebase origin/main merge to local main branch 
+
+---
+
+### ✅ AWS
+
+**1. How do you use an Internet Gateway to provide access to a VPC?**
+
+* Attach IGW to VPC.
+* Add route in route table pointing `0.0.0.0/0` to IGW.
+* Ensure subnet has public IP or Elastic IP.
+
+**2. After rebooting EC2, new IP is assigned — how to retain the same IP?**
+Use an **Elastic IP** and associate it with the instance.
+
+**3. How to recover deleted EC2 instance?**
+You cannot. Use **backup (AMI/snapshot)** to restore a new instance.
+
+**4. In S3, versioning is enabled. After deleting a file, it's still available. Why?**
+Deletion adds a **delete marker**, but older versions still exist.
+
+**5. EC2 needs access to S3 in different region — how?**
+
+* Use an **IAM role** with S3 access.
+* Ensure bucket policy allows cross-region access.
+* Consider **VPC endpoints** or access over the internet.
+
+**6. What are IAM roles and users?**
+
+* **Users**: Individuals with login credentials.
+* **Roles**: Temporary permissions for services or users.
+
+**7. New IAM policy not applying to user — troubleshooting steps:**
+
+* Check if it's attached correctly.
+* Validate JSON syntax.
+* Check policy simulator.
+* Ensure no conflicting deny rules.
+
+**8. Main components of VPC:**
+
+* Subnets
+* Route Tables
+* Internet Gateway
+* NAT Gateway
+* Security Groups
+* NACLs
+* VPC Peering
+
+**9. Explain 3-tier architecture:**
+
+* **Presentation (Web)**: Frontend
+* **Application (Logic)**: Backend
+* **Database**: Data storage
+
+**10. Multiple EC2s in different zones — load balancer?**
+Use **Application Load Balancer (ALB)** or **Network Load Balancer (NLB)**.
+
+**11. Types of Load Balancers:**
+
+* **ALB**: HTTP/HTTPS (Layer 7)
+* **NLB**: TCP/UDP (Layer 4)
+* **CLB**: Classic (deprecated)
+
+**12. Use cases for different load balancers:**
+
+* **ALB**: Web apps, microservices
+* **NLB**: High-performance or static IP
+* **CLB**: Legacy apps
+
+---
+
+### ✅ Kubernetes
+
+**1. Main components of Kubernetes:**
+
+* **API Server**
+* **etcd** (Key-value store)
+* **Controller Manager**
+* **Scheduler**
+* **Kubelet**
+* **Kube Proxy**
+
+            Here’s a clear breakdown of the **core components of Kubernetes** — each plays a crucial role in running and managing your cluster:
+
+---
+
+### 1. 🧩 **Kube-API Server (API Services)**
+
+* **Central control point** for the Kubernetes cluster.
+* All **commands** (kubectl, dashboard, CI/CD tools) talk to the API Server.
+* It **validates and processes REST requests**, updates cluster state in `etcd`, and triggers actions via controllers.
+
+
+### 2. 🗄️ **etcd**
+
+* A **distributed key-value store**.
+* Stores all **cluster configuration and state** — including nodes, pods, secrets, ConfigMaps, etc.
+* It’s the **source of truth** for Kubernetes.
+
+### 3. 🛠️ **Controller Manager**
+
+* Runs **controllers** — background loops that ensure cluster state matches the desired state.
+  Examples:
+
+  * Node controller: detects down nodes
+  * ReplicaSet controller: ensures the correct number of pods
+  * Job controller: manages job lifecycle
+
+
+### 4. 🧠 **Scheduler**
+
+* Decides **which node runs which Pod**.
+* It considers factors like:
+
+  * Resource availability (CPU, memory)
+  * Node labels, taints/tolerations
+  * Pod affinity/anti-affinity
+
+### 5. 🔧 **Kubelet**
+
+* **Agent** running on each worker node.
+* Talks to the API Server.
+* Ensures containers **are running as expected** (via container runtime like Docker or containerd).
+* Monitors pod health and resource usage.
+
+### 6. 🌐 **Kube-Proxy**
+
+* Handles **networking on each node**.
+* Maintains rules for **pod-to-pod and pod-to-service communication**.
+* Can use **iptables** or **IPVS** for routing traffic inside the cluster.
+
+### 🚀 Summary Table:
+
+| Component          | Role                                         |
+| ------------------ | -------------------------------------------- |
+| API Server         | Frontend for the cluster — receives commands |
+| etcd               | Stores all cluster data                      |
+| Controller Manager | Reconciles current state to desired state    |
+| Scheduler          | Assigns pods to nodes                        |
+| Kubelet            | Manages pods on each node                    |
+| Kube-Proxy         | Handles networking and service traffic       |
+
+---
+
+**3. What are Namespaces in Kubernetes?**
+Logical partitions to separate resources and users.
+
+**4. ReplicaSet vs Deployment:**
+
+* **ReplicaSet** ensures number of pods.
+* **Deployment** manages ReplicaSets and updates.
+
+**5. How do you scale deployments?**
+
+```bash
+kubectl scale deployment <name> --replicas=5
+```
+
+**6. How to store sensitive data in Kubernetes?**
+Use **Secrets**.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-secret
+type: Opaque
+data:
+  username: YWRtaW4=        # base64 for 'admin'
+  password: c2VjcmV0cGFzcw== # base64 for 'secretpass'
+
+echo -n 'admin' | base64
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+spec:
+  containers:
+  - name: app-container
+    image: nginx
+    env:
+    - name: DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: db-secret
+          key: username
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: db-secret
+          key: password
+
+
+**7. Readiness and Liveness Probes:**
+Improve app availability:
+
+* **Readiness**: When app is ready to receive traffic.
+* **Liveness**: Checks if app is still running.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: health-demo
+spec:
+  containers:
+  - name: web-app
+    image: nginx
+    ports:
+    - containerPort: 80
+
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      failureThreshold: 3
+
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 80
+      initialDelaySeconds: 3
+      periodSeconds: 5
+      failureThreshold: 2
+
+
+**8. Troubleshoot failed deployments:**
+Use:
+
+```bash
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+**9. Ingress Controller:**
+Manages external HTTP/HTTPS access to services.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-db-from-backend
+  namespace: your-namespace
+spec:
+  podSelector:
+    matchLabels:
+      app: your-database-pod  # labels of the DB pod
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backend-service  # only this pod/service can access
+      ports:
+        - protocol: TCP
+          port: 3306
+  policyTypes:
+    - Ingress
+
+
+**10. Restrict CPU/Memory in pod:**
+Use `resources` block in YAML:
+
+```yaml
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "250m"
+  limits:
+    memory: "256Mi"
+    cpu: "500m"
+```
+
+**11. Deployment Strategies:**
+
+* Recreate
+* Rolling Update
+* Blue-Green
+* Canary
+
+**12. DR situation — deployment setup:**
+
+* Use multi-region clusters
+* Backup etcd
+* CI/CD pipelines to redeploy
+
+**13. Blue-Green vs Canary vs Rolling:**
+
+* **Blue-Green**: Two environments, switch traffic.
+* **Canary**: Partial rollout to subset.
+* **Rolling**: Gradual replacement.
+
+**14. Types of containers in Kubernetes:**
+
+* **App containers**
+* **Init containers**
+* **Sidecars**
+
+**15. What is an Init container?**
+Runs before app container for setup.
+
+**16. Can we set alias in Kubernetes?**
+Yes, via ConfigMap or shell-level settings in container.
+
+**17. Types of Kubernetes services:**
+
+* ClusterIP
+* NodePort
+* LoadBalancer
+* ExternalName
+* Headless
+
+**18. Connecting RDS to Kubernetes:**
+Use a **Service** and proper **Secrets/config** to define DB connection.
+
+kubectl create secret generic rds-credentials \
+  --from-literal=db-username=<your-username> \
+  --from-literal=db-password=<your-password> \
+  --from-literal=db-name=<your-db-name>
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+  - name: app-container
+    image: myapp-image
+    ports:
+    - containerPort: 80
+    env:
+    - name: DB_HOST
+      value: "mydbinstance.abcdefg.us-west-2.rds.amazonaws.com"
+    - name: DB_PORT
+      value: "3306"  # Or whatever port your RDS uses
+    - name: DB_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: rds-credentials
+          key: db-username
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: rds-credentials
+          key: db-password
+    - name: DB_NAME
+      valueFrom:
+        secretKeyRef:
+          name: rds-credentials
+          key: db-name
+
+
+**19. When to use NodePort/LoadBalancer:**
+
+* **NodePort**: External access via node IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80              # Port inside the cluster
+      targetPort: 80         # Port inside the container
+      nodePort: 30080        # Port exposed on each node
+  type: NodePort
+
+
+* **LoadBalancer**: For cloud load balancer integration.
+
+---
+
+### ✅ Jenkins
+
+**1. How CI/CD works, and configuration:**
+
+* CI: Auto-test & build on code push.
+* CD: Auto-deploy to environment.
+* Configure via **Pipelines** or **Freestyle** jobs.
+
+**2. Stages in Jenkins:**
+
+* SCM Checkout
+* Build
+* Test
+* Deploy
+* Notify
+
+**3. Java project tool/plugin:**
+Use **Maven** or **Gradle** plugin.
+Use Maven or Gradle plugins for building Java applications. Jenkins has dedicated plugins for these tools
+
+**4. View Jenkins logs:**
+
+* Job logs: Console Output
+* System logs: `$JENKINS_HOME/logs` or `Manage Jenkins → System Log`
+
+**5. What is Blue Ocean plugin?**
+A modern, user-friendly UI for pipelines.
+
+**6. Master-slave architecture in Jenkins:**
+
+* **Master**: Orchestrates builds
+* **Slaves/Agents**: Run the builds
+
+**7. Run job on specific slave:**
+Use **labels** and assign job to run on matching agent.
+
+**8. Shared library in Jenkins:**
+Reusable Groovy scripts/functions across pipelines.
+
+**9. Managing credentials in Jenkins:**
+`Manage Jenkins → Credentials` → Add with scopes.
+
+**10. Configure SonarQube in Jenkins:**
+
+* Install Sonar plugin
+* Add server in config
+* Use scanner in pipeline
+
+**11. Speed up builds:**
+
+* Use caching
+* Run in parallel
+* Use faster agents
+* Clean workspace
+
+**12. Job taking longer — reasons:**
+
+* Dependency issues
+* Network slowness
+* Lack of parallelization
+* Increased test cases
+
+**13. Blue-Green Deployment in Jenkins:**
+Use two environments, switch traffic post-deploy using scripts or load balancer config.
+
+**14. Clean old builds:**
+Use `Discard Old Builds` option in job config.
+
+**15. Parallel jobs in Jenkins:**
+
+* Depends on available **executors** and **agents**.
+* Configure in pipeline using `parallel {}` block.
+
+AWS
+1. ALB not sending requests to one node – possible reasons?
+The 3rd node may be marked as unhealthy due to failed health checks. Also, ensure the security group allows traffic from ALB and that the application is properly responding.
+
+2. Encrypt EBS on a running instance behind Load Balancer:
+You cannot encrypt an attached EBS volume directly. Instead, take a snapshot, copy it with encryption, then create a new encrypted volume and attach it to the instance.
+
+3. Replicating EC2 instance from one AWS account to another:
+Create an AMI of the EC2, share the AMI with the destination account, then launch a new instance from that AMI in the second account.
+
+Kubernetes
+4. Pod in CrashLoopBackOff – how to fix?
+Check kubectl logs <pod> and kubectl describe pod <pod> to find the error. Common causes are failed init containers, bad configs, or missing dependencies. Fix and redeploy.
+
+5. What is CrashLoopBackOff?
+It means the container is repeatedly failing and restarting. Kubernetes gives it a backoff time between retries to avoid overwhelming the system.
+
+6. What is a StatefulSet (stateful file)?
+A StatefulSet is a Kubernetes controller that manages pods with persistent identity and stable storage—used for databases or apps needing unique, stable hostnames.
+
+7. Allowing port for a service in a StatefulSet only:
+Use a NetworkPolicy to restrict access. Define ingress rules allowing traffic only from the specific service or namespace.
+
+8. One node in NotReady state – how to replace?
+Cordon and drain the node using kubectl drain. Then terminate it (if managed by auto-scaling), or manually recreate the node with the same taints/labels.
+
+9. What is taint and tolerance?
+Taints prevent pods from scheduling on a node unless the pod has a matching tolerance. Useful for isolating workloads (e.g., GPU or special hardware nodes).
+
+10. Node affinity vs node selector:
+
+Node Selector is basic filtering by a single key.
+
+Node Affinity is more expressive; it supports operators (like In, NotIn) and multiple match conditions.
+
+11. Horizontal and other scaling types in K8s:
+
+Horizontal Pod Autoscaler: Scales pods based on CPU/memory.
+
+Vertical Pod Autoscaler: Adjusts pod resources.
+
+Cluster Autoscaler: Adds/removes nodes in a cluster.
+
+Advanced VPC & Networking
+12. Private instance in VPC-A to DB in VPC-C (via VPC-B):
+You need transitive routing, which is not supported natively in VPC peering. Use a Transit Gateway or a VPN/Proxy setup to connect across all VPCs.
+
+13. Can you add more CIDR to a VPC?
+Yes, AWS allows you to add up to 5 secondary CIDR blocks to a VPC using the "Add IPv4 CIDR" option.
+
+14. App to RDS shows too many connections error – how to fix?
+Tune the RDS max_connections parameter. Use connection pooling (e.g., PgBouncer) and optimize application code to close unused DB connections.
+
+15. What are Auto Scaling policies in AWS?
+
+Target tracking (based on CPU or custom metric)
+
+Step scaling (based on thresholds)
+
+Scheduled scaling (time-based rules)
+
+16. What CloudWatch metrics are available?
+CPU, memory, disk I/O, network usage, and custom metrics. Alarms can be set to act on thresholds.
+
+17. Instance under high load – how to debug?
+Use top, iotop, or netstat to identify bottlenecks. Review CloudWatch metrics, application logs, and possibly memory leaks or connection exhaustion.
+
+18. Check child processes of a parent (with PID):
+Use ps --ppid <PID> or pstree -p <PID> to view child processes.
+
+19. Identify PID by process name:
+Use pidof <process-name> or ps aux | grep <process-name>.
+
+20. OOM Killer killed app – how to auto-recover?
+Set up systemd service with Restart=always in the unit file. Tune pod memory limits in Kubernetes to avoid triggering OOM.
+
+21. Recover “NotReady” instance in AWS:
+Check system logs via EC2 console. Reboot, stop/start, or replace the instance. Verify instance role, security groups, and instance health status in console.
+
+22. What is a tainted OS?
+Not an official AWS term, but might refer to a node with taints that prevent pod scheduling unless tolerated—often used for special-purpose nodes.
+
+23. Can we bind a specific port to a specific node in K8s?
+Yes, using NodePort or a hostPort configuration. But this is generally discouraged for scalability reasons.
+
+Git & Jenkins
+24. Steps to create a Git pull request:
+
+Create a feature branch
+
+Commit and push changes
+
+Navigate to your Git host (e.g., GitHub)
+
+Click “Create Pull Request” to merge into the base branch
+
+25. How to resolve Git conflicts & types of conflicts:
+Conflicts occur when multiple changes are made to the same lines or overlapping areas. Use git status, manually resolve the file, mark as resolved, and commit.
+
+26. What is pipeline flow and stages of a pipeline?
+Stages in CI/CD pipeline typically include checkout, build, test, deploy, and notify. Pipelines are scripted (e.g., Jenkinsfile) and executed sequentially or in parallel.
+
+Kubernetes Services
+27. When to use NodePort service in K8s?
+Use NodePort for external access without a cloud load balancer. It exposes the service on a static port on each node’s IP.
+
+28. What is LoadBalancer service in K8s?
+It provisions a cloud provider’s load balancer and routes external traffic to your pods. Ideal for production-grade, scalable, external services.
+
+

@@ -1,0 +1,424 @@
+all: 
+   children:
+      webservers:
+        children:
+           webservers_us:
+             hosts:
+                server1_us.com:
+                    ansible_host: 192.168.3.2
+                server2_us.com:
+                    ansible_host: 192.168.2.2
+           webservers_eu:
+             hosts:
+                server1_eu.com:
+                    ansible_host:10.12.2.2
+                server2_eu.com:
+                    ansible_host:10.12.2.3
+                    
+
+
+ansible-playbook --syntax-check 
+ansible-playbook --check 
+ansible-playbook --diff
+ansible-lint playbook.yml ## is command to check systax error 
+ansible all(use hostgorup to chekc the host) --list-host
+ansible-vault encrypt_string --ask-vault-pass -name 'ansible_become_pass' 'password' # this will generate a key, which need to be used in 
+##yaml as ansible_become_pass: !vault | 
+                                $Ansible_vault;1.1:AES256
+                                **********************
+ansible-vault encrypt/decrypt/rekey/view  enternal_vault_vars.yaml 
+ansible-paybook install-package --tags "install-package" --skip-tags "install-package" "all"
+ansible-galaxy init role_name ## command to create a role 
+ 
+- include_tasks: abc.yaml ## this will include another playbook in a playbook dynamic statement 
+- import_tasks: import.yaml ## this will import the task every individual task is validate upon when statement static statement 
+    - when: import_tasks is not defile 
+## Exceotion Handle  
+Ignore error continue execution
+ignore_error: yes
+
+## Only when failed 
+
+register: data
+failed_when: "'no space left' data.stdout"
+
+## Using block, rescue, and always
+
+🔹 block: Groups multiple tasks.
+🔹 rescue: Runs only if any task in the block fails.
+🔹 always: Runs regardless of success or failure.
+
+- name: Update system and handle failures
+  hosts: all
+  become: yes
+  tasks:
+    - block:
+        - name: Update all packages
+          apt:
+            update_cache: yes
+            upgrade: dist
+
+        - name: Restart services
+          service:
+            name: nginx
+            state: restarted
+
+      rescue:
+        - name: Log the failure
+          debug:
+            msg: "Package update or service restart failed!"
+
+      always:
+        - name: Ensure system is reachable
+          ping:
+
+## Call Roles
+
+become: yes
+  roles:
+    - nginx
+
+## Install Software 
+
+--- 
+name: Install software
+hosts: all
+gather_facts: True
+serial: 2 ## is to run ansible on 2 servers at a time 
+      : 16%
+        24%
+strategy: free ## will execute task on all the server, but will not wait for finish result
+          linear
+          host_pinned
+          debug
+          
+vars: 
+  packages:
+    - name: nginx
+      required: True
+    - name: mysql
+      required: True
+
+tasks:
+- name: install "{{ item.name}}"
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  when: item.required == True
+  loop: "{{ package }}"
+  tags:
+    - install-package
+## Copy File to remote Server
+
+tasks:
+    - name: Copy a single file
+      copy:
+        src: /local/path/to/file.txt    # Source file on your Ansible control node
+        dest: /remote/path/to/file.txt  # Destination path on the remote server
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start Nginx Service
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+
+
+## another eg of looping -
+  with_dict:
+    james:
+      full_name: James Suprin
+    hayley:
+      full_name: Hayley Suprin
+
+
+## to reg output to diff variable 
+
+- name : Exploring register 
+  command: hostname -s 
+  register: hostname_output
+- name : Show hostname_output
+  debug: 
+    var: hostname_output
+
+
+## Copy files to remote server
+
+## Patch Servers with latest packages 
+---
+- name: Patch Servers with Latest Packages
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Upgrade all packages to the latest version (Debian/Ubuntu)
+      apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update package cache (RHEL/CentOS)
+      yum:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Upgrade all packages to the latest version (RHEL/CentOS)
+      yum:
+        name: '*'
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+
+## Derploy AWS Instances 
+tasks:
+  - name: aws 
+    ec2-group
+      name: ansible 
+      description: Ansible securty ec2-group 
+      region: us-east-1
+      rules: 
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr: 0.0.0.0/0
+      
+
+tasks:
+  - name: Ec2 instance
+    ec2_instance:
+      key_name: ansible
+      name: 
+      security_group:
+      instance_type:
+      image_id: xxxxx
+      region: us-east-1
+      wait: True 
+      count: 20
+    
+ ## Patching Linux Server 
+
+  register: ec- name: Patch Linux Servers
+  hosts: all
+  become: yes
+  vars:
+    reboot_required_file: "/var/run/reboot-required"  # For Ubuntu/Debian
+    os_family_map:
+      RedHat: "yum"
+      Debian: "apt"
+      Suse: "zypper"
+
+  tasks:
+    - name: Pre-Check - Verify disk space and uptime
+      command: df -h /
+      register: disk_space
+      changed_when: false
+
+    - name: Show Disk Space
+      debug:
+        var: disk_space.stdout_lines
+
+    - name: Update packages for Debian-based systems
+      apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update packages for RedHat-based systems
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    - name: Update packages for SUSE-based systems
+      zypper:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "Suse"
+
+    - name: Check if reboot is required
+      stat:
+        path: "{{ reboot_required_file }}"
+      register: reboot_required
+      when: ansible_os_family == "Debian"
+
+    - name: Reboot the server if needed (Debian-based)
+      reboot:
+      when: reboot_required.stat.exists
+
+    - name: Reboot the server if needed (RedHat-based)
+      command: needs-restarting -r
+      register: reboot_status
+      failed_when: reboot_status.rc not in [0,1]
+      notify: Reboot Now
+      when: ansible_os_family == "RedHat"
+
+  handlers:
+    - name: Reboot Now
+      reboot:
+        msg: "System rebooting for patching"
+        post_reboot_delay: 30
+        test_command: uptime
+
+### Patching based URL 
+
+- name: Configure Repository and Patch Linux Servers
+  hosts: all
+  become: yes
+  tasks:
+  
+    # ============================
+    # REPOSITORY CONFIGURATION
+    # ============================
+    - name: Add repository for Debian-based systems
+      apt_repository:
+        repo: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} main restricted universe multiverse"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add repository for RedHat-based systems
+      yum_repository:
+        name: baseos
+        description: BaseOS Repo
+        baseurl: http://mirror.centos.org/centos/$releasever/BaseOS/$basearch/os/
+        gpgcheck: yes
+        enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    # ============================
+    # PACKAGE UPDATE
+    # ============================
+    - name: Update packages for Debian-based systems
+      apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update packages for RedHat-based systems
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+    # ============================
+    # REBOOT (IF REQUIRED)
+    # ============================
+    - name: Reboot the server
+      reboot:
+        msg: "Rebooting after patching"
+        post_reboot_delay: 30
+
+
+
+
+
+provider "aws" {
+region = "us-east-1"
+}
+
+resource "aws_security_group" "example_sg" {
+  name        = "example-security-group"
+  description = "Allow SSH and HTTP"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0" # Replace with your AMI ID
+  instance_type = "t2.micro"
+  key_name      = "your-key" # Replace with your SSH key name
+  security_groups = [aws_security_group.example_sg.name]
+
+  root_block_device {
+    volume_size = 20
+  }
+
+  ebs_block_device {
+    device_name = "/dev/sdb"
+    volume_size = 50
+  }
+
+  tags = {
+    Name = "AWS-Instance"
+  }
+}
+
+provider "vsphere" {
+  user           = "administrator@vsphere.local"
+  password       = "your-password"
+  vsphere_server = "your-vcenter-server"
+  allow_unverified_ssl = true
+}
+
+resource "vsphere_virtual_machine" "vm" {
+  name             = "VMware-Instance"
+  resource_pool_id = "your-resource-pool-id"
+  datastore_id     = "your-datastore-id"
+
+  num_cpus = 2
+  memory   = 4096
+  guest_id = "other3xLinux64Guest" # Adjust for your OS type
+
+  network_interface {
+    network_id   = "your-network-id"
+    adapter_type = "vmxnet3"
+  }
+
+  disk {
+    label            = "disk0"
+    size             = 20
+    eagerly_scrub    = false
+    thin_provisioned = true
+  }
+
+  clone {
+    template_uuid = "your-template-uuid" # Replace with your VM template
+
+    customize {
+      linux_options {
+        host_name = "vm-example"
+        domain    = "local"
+      }
+      network_interface {
+        ipv4_address = "192.168.1.100"
+        ipv4_netmask = 24
+      }
+      ipv4_gateway = "192.168.1.1"
+    }
+  }
+}

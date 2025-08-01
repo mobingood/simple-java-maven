@@ -1,0 +1,5 @@
+Parallel Job Execution in GitHub Actions Scenario: You need to run integration tests in parallel across different environments (Node.js 14, 16, 18). Question: How would you configure your GitHub Actions pipeline to execute jobs in parallel efficiently?
+What procedures should be followed to make an object from one module highly accessible to the other module?\
+Why is Kafka technology significant to use?
+Explain is it possible to replace Nginx errors like 502 error with 503
+

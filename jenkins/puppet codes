@@ -1,0 +1,114 @@
+puppet module generate yourname-yourmodule
+pdk new module carbonblack
+Component | Default Path
+Main Config File | /etc/puppetlabs/puppet/puppet.conf
+SSL Certs | /etc/puppetlabs/puppet/ssl/
+Manifest Dir | /etc/puppetlabs/code/environments/production/manifests/
+Module Dir | /etc/puppetlabs/code/environments/production/modules/
+Log File | /var/log/puppetlabs/puppet/puppet.log
+puppetserver ca list
+puppetserver ca sign --certname example-agent.domain.com
+puppetserver ca sign --all
+puppetserver ca revoke --certname example-agent.domain.com
+puppetserver ca clean --certname example-agent.domain.com
+
+
+
+
+
+# File: carbon_black.pp
+
+class carbon_black (
+  String $installer_url,
+  String $installer_file,
+  String $sensor_token,
+  String $package_provider = 'rpm',  # or 'dpkg' for Debian-based
+) {
+
+  package { 'wget':
+    ensure => installed,
+  }
+
+  # Download the Carbon Black sensor installer
+  exec { 'download_cb_sensor':
+    command => "/usr/bin/wget -O /tmp/${installer_file} ${installer_url}",
+    creates => "/tmp/${installer_file}",
+    require => Package['wget'],
+  }
+
+  # Install the package
+  package { 'cb-sensor':
+    ensure   => installed,
+    provider => $package_provider,
+    source   => "/tmp/${installer_file}",
+    require  => Exec['download_cb_sensor'],
+  }
+
+  # Register the sensor
+  exec { 'register_cb_sensor':
+    command => "/opt/carbonblack/psc/install.sh --sensor-token ${sensor_token}",
+    unless  => "test -f /var/opt/carbonblack/psc/registration_successful",
+    require => Package['cb-sensor'],
+  }
+}
+
+# Example usage
+node 'your-target-node' {
+  class { 'carbon_black':
+    installer_url  => 'https://your.repo/path/to/cb-sensor.rpm',
+    installer_file => 'cb-sensor.rpm',
+    sensor_token   => 'ABC123TOKEN456XYZ',
+    package_provider => 'rpm',
+  }
+}
+
+## Custom fact 
+
+your_module/
+└── lib/
+    └── facter/
+        └── your_custom_fact.rb
+
+
+# File: your_module/lib/facter/uptime_minutes.rb
+
+Facter.add(:uptime_minutes) do
+  confine :kernel => 'Linux'
+  setcode do
+    uptime_output = Facter::Core::Execution.execute('cat /proc/uptime').split
+    (uptime_output[0].to_f / 60).to_i
+  end
+end
+
+
+# File: lib/facter/is_virtual.rb
+
+Facter.add(:is_virtual) do
+    confine :kernel => 'Linux'
+    setcode do
+      output = Facter::Core::Execution.execute('facter virtual')
+      output != 'physical'
+    end
+  end
+
+# File: lib/facter/primary_interface_ip.rb
+
+Facter.add(:primary_interface_ip) do
+    confine :kernel => 'Linux'
+    setcode do
+      interface = Facter::Core::Execution.execute("ip route | grep default | awk '{print $5}'")
+      ip = Facter::Core::Execution.execute("ip -4 addr show dev #{interface} | grep inet | awk '{print $2}' | cut -d/ -f1")
+      ip.strip
+    end
+  end
+  
+# File: lib/facter/carbon_black_installed.rb
+
+Facter.add(:carbon_black_installed) do
+    confine :kernel => 'Linux'
+    setcode do
+      File.exist?('/opt/carbonblack/psc/bin/cbdaemon') ||
+      File.exist?('/usr/share/cb/cbdaemon')
+    end
+  end
+  

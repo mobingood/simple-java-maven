@@ -1,0 +1,104 @@
+GIT 
+
+what is git branch stratery 
+how many types of git branches 
+what is hot fix branch 
+if you push the change to wrong branch how do we fix 
+hwo do you push repo to a specifi branch instread of root branch 
+what is different between git pull and git fetch get head git 
+
+AWS : 
+aws services : how do tyou use internet gateway to provice access to vpc 
+you rebooted hte ec2 instance and new ip is assigned, how can we retain same ip. 
+how can we recover deleted ec2 instance 
+in s3 versioning is enabled , after deleting the file its still avaivle , what is the reason of it 
+ec2 instance runing application it reqiore s3 bucket access hwo do you configure in different reion/ cross region access to the bucket
+waht is IAM riles and users
+Created new IAM policy its not applyng to the user how do you trouble shoot it 
+what are the main components of VPC 
+can you explain 3 tier architecture ? 
+we have multiple instance running in diffeerent zone, hwo do you consider load balancer to distribute the traffic ? 
+hwo may types of load balancer 
+what are the uses of differnt load balancer 
+
+
+Kubernetes : 
+
+Main componenets of Kubernets, explain each.  
+what is etcd, explain
+what are the namae spaces in Kubernetes
+what is differnt in replica and deployment 
+how to do you scale deploymetn in kubernets 
+in kubernets how do you store sensitive data 
+how to ytour rediness probab ad liveness prop to impore application ability 
+if kubernets deployment fail, how do we truble shoot the issue 
+Do you know about ingress controller 
+hwo do you restric the resoure cpu or memory in port ? 
+explain about deployment strategies 
+in DR situtation how do you confirue your deployment 
+what is blue green deplymetn and canary or rolling update 
+How many types of container in kubernets 
+what is the use of INIT continer 
+Can we set alina in kubernetes ? 
+what are the different types of services in kubernetes 
+if we want to connet rds with kuybenets which services we can use 
+when we use NODE pod services 
+any load balancer services
+
+
+Jenkins : 
+
+HOW CI and CD work, how it configured 
+what are the stages of jenkins 
+if we have java whch tool or plugin we can use in jenkins 
+how can we see jenkins logs 
+What is blue ocean plugin 
+waht is master slave archtecute in jenkins 
+suppose you hve master and 3 slave nodes how do we configure jenkins job to run on specific node 
+what is shared lib in jenkins
+how do we manage credentials in jenkisn 
+if i want to configure sonar qube in jenkins how do we do it ? 
+how do we speed up the build 
+early Job we completing in 1o mins now its taking 30 mins, what could be possible reasons 
+how do we configure blue green deployment 
+how do we clean up old builds
+how many parallel jobs can run in Jenkins 
+
+
+AWS
+
+IN aws application load balancer 3 nodes is configured, request is reaching 2 nodes but not to 3 nod, what could be posible reasons for it 
+i want to encrypt the ebs volume, on runnign instance, which is part of Load balancer, how can we encryt the ebs on running instance
+2 aws account, replicate instance from a to b 
+
+you kube pod is crashing continuiosly with crash loop back erro , how can you solve it 
+what is crash loop back in kube pods 
+
+what is stateful file , kubernets you have specifi database deployment stateul file running on some code of database, by defualt it allow from al ports across the cluster, if you want to allow this port for a specific servies then how can you achive this ? 
+you have 3 nodes running under cluser, one node is not ready state, how can we repalce it. 
+what is taint and tollarence ? 
+what is node affinity and node selector 
+what is horizontal scaling and other scaling type in kube
+
+
+3 vpc , vpc-a is peer with vpc-b is peer with vpc-c you have one private instance in private subnet of vpc-a you have a database in vpc-c, you have to connect instacne with database, can we connect with private IP or how can we connect. 
+Let say we have vpc  , and we assigned CIDR in it, after some time we discovered we need more IPs, can we add more cidr in vpc
+we have ec2 machine, which is runing appication, its connect to rds, when you calling the applcisation its give some ex epts and found you found too many connections in it, how can we solve it. 
+
+What are some Auto scaling policy in AWS .
+What type of matrics we get in cloudwatch. 
+Instacne High load how can we debut the issue
+how to check child process of parent process of IP 
+idetify PID with process name
+you have a script in systemctl, ater soem time this script started taking more memory and kernbel run OOM killer and killed your application, how can your auto recover in such case. 
+
+
+in AWS how can you recover not ready sate instance 
+what is tainted OS 
+can we bound specific port with specific node.
+
+what are the steps of creating GIT Pull request. 
+how can we resolve conflit in git, and what kind of conflits we can receive
+what is the flow of pipeline and what are the stages of pipeline
+
+

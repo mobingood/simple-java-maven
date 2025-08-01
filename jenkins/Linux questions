@@ -1,0 +1,207 @@
+Advance linux Interview questions: 
+
+
+## 1: Kernel related files 
+	1: share me kernel related files,  kernel Image file 
+	2: Kernel Modules
+		/lib/modules/$(uname -r).    —- contains all kernel modules for the running kernel
+		/etc/modules				list modules that should be loaded at boot
+
+		1 : modprobe module_name
+		2 : mod probe -r module_name
+	3: kernel Logslsmo	
+		/var/log/dmesg
+		/var/log/kern.log
+		/var/log/messages
+		dimes | less
+		journalctl -k 
+
+	4: how can you change kernel parameters and configuration 
+		/proc/cmdline.        Kernel boot parameters passed by boot loader
+		/proc/sys/	        interface for runtime kernel parameter tunning 
+		/etc/sysctl.conf	persistent kernel parameter	
+		
+		sysctl -a | less
+		
+		permanent kernel parameter change persistent
+			echo “net.ipv4.ip_forward=1” >> /etc/sysctl.conf
+			sysctl -p
+	5 : kernel source code & headers
+		/usr/src/linux-headers-$(uname -r)/		Kernel header for compiling modules
+		/usr/include/linux				kernel header files for system calls
+		/usr/src/linux/					Linux Kernel Source Directory	
+
+
+	6: kernel -realted Executables
+		uname -r 
+		lsmod 		list loaded kernel modules
+		modprobe	load/unload kernel modules
+		sysctl		view and modify kernel parameters		
+		dimes		verkenel logs
+	
+	7: disable kernel modules before serve startup
+		echo “blacklist usb-storage” > /etc/modprobe.d/blacklist-usb-storage.conf
+
+		update-initrafms -u  (for debain / Ubuntu)
+		dracut —force		(for reel /centos)
+
+
+	8: prevent module from loading
+		vi /etc/default/grub
+		GRUB_CMDLINE_LINUX=”modprobe.blacklist=usb-storage”
+		 update-grub
+		grub2-mkconfig -o /boot/grub2/grub.cfg
+		reboot
+
+	 9:  start service at system startup 
+
+		vi /etc/systemd/system/mystartup.service
+		
+		systemctl daemon-reload
+		systemctl enable mystartup.service
+		systemctl start mystartup.service
+
+		systemctl disable mystartup.service
+
+
+		old Linux 
+		
+		vi /etc/rc.local
+			/path/scrip.sh &
+
+	  10: different /etc/passwd and shadowpass 
+	  		passwd : username , passwd , uid,gid,userinfo ,homedir, shell
+			shadow : username, encrypass , lastpasschnage ,minday , maxdays, day beforeexire, accont expire, reserved field 
+	  11 : nohup np hand up, means nont stop the process even after logout 
+
+	  12 : check system boot log, 
+	  		 journalctl -b
+	  13 :  what does strace command do
+	  		its show what happed during the script or signal execution
+			strace -o : will redirect output to the file 
+
+
+
+
+	  14: system kill signals 
+
+	  		0 - ? 
+1 - SIGHUP - ?, controlling terminal closed, 
+2 - SIGINT - interupt process stream, ctrl-C 
+3 - SIGQUIT - like ctrl-C but with a core dump, interuption by error in code, ctl-/ 
+4 - SIGILL 
+5 - SIGTRAP 
+6 - SIGABRT 
+7 - SIGBUS 
+8 - SIGFPE 
+9 - SIGKILL - terminate immediately/hard kill, use when 15 doesn't work or when something disastrous might happen if the process is allowed to cont., kill -9 
+10 - SIGUSR1 
+11 - SIGSEGV 
+12 - SIGUSR2
+13 - SIGPIPE 
+14 - SIGALRM
+15 - SIGTERM - terminate whenever/soft kill, typically sends SIGHUP as well? 
+16 - SIGSTKFLT 
+17 - SIGCHLD 
+18 - SIGCONT - Resume process, ctrl-Z (2nd)
+19 - SIGSTOP - Pause the process / free command line, ctrl-Z (1st)
+20 - SIGTSTP 
+21 - SIGTTIN 
+22 - SIGTTOU
+23 - SIGURG
+24 - SIGXCPU
+25 - SIGXFSZ
+26 - SIGVTALRM
+27 - SIGPROF
+28 - SIGWINCH
+29 - SIGIO 
+29 - SIGPOLL 
+30 - SIGPWR - shutdown, typically from unusual hardware failure 
+31 - SIGSYS 
+
+
+## Multipathing 
+
+
+
+
+
+
+Network Bonding 
+
+| Mode | Name             | Description |
+|------|------------------|-------------|
+| 0    | balance-rr       | Round-robin load balancing |
+| 1    | active-backup    | One NIC active, others standby |
+| 2    | balance-xor      | XOR-based load balancing |
+| 3    | broadcast        | Broadcast on all interfaces |
+| 4    | 802.3ad (LACP)   | IEEE LACP link aggregation |
+| 5    | balance-tlb      | Adaptive transmit load balancing |
+| 6    | balance-alb      | Adaptive load balancing |
+
+/etc/sysconfig/network-scripts/ifcfg-bond0
+
+DEVICE=bond0
+NAME=bond0
+TYPE=Bond
+BONDING_MASTER=yes
+BOOTPROTO=none
+ONBOOT=yes
+IPADDR=192.168.1.100
+NETMASK=255.255.255.0
+GATEWAY=192.168.1.1
+BONDING_OPTS="mode=1 miimon=100"
+
+
+# /etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE=eth0
+MASTER=bond0
+SLAVE=yes
+ONBOOT=yes
+
+# /etc/sysconfig/network-scripts/ifcfg-eth1
+DEVICE=eth1
+MASTER=bond0
+SLAVE=yes
+ONBOOT=yes
+
+##Default dir in Linux 
+
+| Directory | Description |
+|-----------|-------------|
+| `/`       | Root of the entire filesystem (everything starts here) |
+| `/bin`    | Essential binary executables (e.g., `ls`, `cp`, `mv`) |
+| `/boot`   | Bootloader files (e.g., kernel, `grub`) |
+| `/dev`    | Device files (e.g., `/dev/sda`, `/dev/null`) |
+| `/etc`    | System configuration files |
+| `/home`   | Home directories of regular users (e.g., `/home/alice`) |
+| `/lib`    | Essential shared libraries for binaries in `/bin` and `/sbin` |
+| `/media`  | Mount point for removable media (e.g., USB drives) |
+| `/mnt`    | Temporary mount point for manually mounted filesystems |
+| `/opt`    | Optional/add-on software packages |
+| `/proc`   | Virtual filesystem for process and kernel info |
+| `/root`   | Home directory for the root user |
+| `/run`    | Runtime data for processes (e.g., PID files, sockets) |
+| `/sbin`   | System binaries (used by root for system management) |
+| `/srv`    | Service data (e.g., web server or FTP server data) |
+| `/sys`    | Virtual FS for device and kernel info
+
+
+## adding route table 
+
+/etc/sysconfig/network-scripts/route-eth0
+
+192.168.2.0/24 via 192.168.1.1 dev eth0
+
+sudo ip route add default via 192.168.1.1
+sudo ip route del 192.168.2.0/24
+
+
+what is OOM , out of memory killer is a kernel process which kills memory when systme is rnning critically low on memory 
+
+timedatectl is the comand to check te time zone 
+timedatectl list-timezones is to view the time zone
+timedatectl set-timezone america 
+
+
+

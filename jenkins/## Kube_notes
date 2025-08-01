@@ -1,0 +1,483 @@
+## Kube_notes
+
+sudo hostnamectl set-hostname master.example.com ## to set hostname 
+sudo kubeadm init 
+sudo kubeadm token create --print-join-command ## copy token to add nodes to master server 
+sudo kubeadm join masternodeip:6443 --token --discovery-token-ca-cert-hash sha256:.......
+kubectl get nodes
+kubectl get nodes - o wide
+kubectl describe node worker-node1.example.com
+kubectl get pods
+
+## zverify cluster Setup
+kubectl get nodes
+kubectl config view
+kubectl config current-context
+kubectl config get-contexts kubenetes-admin@kubenetes
+
+Deep-dive into control-plane 
+
+kubectl cluster-info
+kubectl cluster-info dump > /tmp/cluster-dump
+kubectl get nodes worker-node-1.example.com
+kubectl describe node workedr-node | less
+
+
+kubectl get namespaces
+kubectl get pods -A 
+kubectl get pods -n kube-system
+
+## look into /etc/kubernetes/ - config , manifest & pki 
+
+kubectl get pods - n kube-system -o wide  | grep proxy 
+service kubectl status 
+
+
+register working nodes 
+kubectl get nodes 
+kubectl describe node worker-node-1.example.com
+
+kubectl delete node worker**
+kubectl get nodes 
+
+vi nodereg.sh
+
+bash
+nodes = ("w1" "w1" "w3")
+labels= ("n1" "n2" "n3")
+
+for i in "${!nodes[@]}" ; do 
+  jq -n \ 
+     --arg name "${noes[i]}" \
+     --arg label "${labels[i]}" \
+    {
+    "kind": "Node"
+    "apiVersion" : "v1",
+    "metadata" : {
+            "name": "worker-node1.expample.com"
+            "labels": {
+            "name": "firstnode"
+            }
+    }' | kubectl apply -f - 
+done
+    
+Deploying the first pod and accessing it 
+
+kubectl run nginxpod --image=nginx --port 80
+kubectl get pods
+kubectl describe pod nginxpod
+kubectl exec -it nginx /bin/sh
+kubectl logs nginxpod
+
+
+kubectl explain pod.spec.containers
+kubect pod.spec.containers --recursive
+
+##Once container per pod 
+
+create a file vi pod.yaml
+
+apiVersion: v1
+kind: pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  # container1
+    - name: nginx
+      image: nginx:1.14.2
+      ports:
+        - containerPort: 80
+   # contiainer2
+
+    -name: rexdis
+     image: rexdis
+
+
+kubectl apply -f pod.yaml
+
+
+
+Init-container
+
+apiVersion: v1
+kind: pod
+metadata:
+    name: purple
+spec:
+  containers:
+    - command:
+        - sh   
+        - -c 
+        - echo the app is running ! && sleep 3600
+      image: busybox:1.28
+      name: purple-container
+    ## dding 2 inti contianer to execute sleep command
+    initContiners:
+    - command:
+        - sh
+        - -c 
+        - sleep 60
+      image: busybox:1.28
+      name: warm-up-1
+
+kubectl get pods purple -w 
+
+
+Static-Pod
+SSH into worker-node-1,
+sudo ls /etc/kubernetes/
+sudo mkdir /etc/kubernetes/manifests
+sudo ls /etc/kubernetes/
+sudo vi /etc/kubernetes/manifests/pod1
+
+Create a yaml file in
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-web
+spec:
+  containers:
+    - name: web
+      image: nginx
+      ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+
+ 
+In the master node,
+k get pods | grep static-web
+ 
+The pod will appear in default ns
+Delete the static pod file in worker01
+sudo rm /etc/kubernetes/manifests/pod1
+
+In the master node,
+k get pods -A
+ 
+The pod will Disappear in default ns
+Resource Limits 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rl-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
+    resources:
+      requests: # Minimum Value        
+        memory: "100Mi"
+        cpu: "250m" # 1 core = 1000m
+      limits:  # Maximum Value         
+        memory: "128Mi"
+        cpu: "300m"
+
+K apply -f resource-limits.yaml
+k describe pod rl-pod
+Deployment
+k explain deploy
+k explain deploy.spec.strategy --recursive
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+
+kubectl apply -f deploy.yaml
+kubectl get deployments
+kubectl rollout status deployment nginx-deployment
+kubectl get rs
+Update Deployment
+k explain deploy.spec.strategy.rollingUpdate
+
+Syntax: [Not to be executed]
+kubectl set image deployment <deployment-name> container-name=image:tag
+kubectl set image deployment nginx-deployment nginx=nginx:1.16.1
+
+kubectl rollout status deployment nginx-deployment
+
+kubectl get rs
+
+kubectl get pods | grep nginx-deployment
+
+kubectl describe deployment nginx-deployment
+
+Setting wrong image
+kubectl set image deployment nginx-deployment nginx=nginx:xxxxxx
+
+kubectl rollout status deployment nginx-deployment
+Waiting for rollout to finish: 1 out of 3 new replicas has been updated...
+
+kubectl get rs
+
+kubectl get pods | grep nginx-deployment
+
+kubectl describe deployment
+
+kubectl rollout history deployment nginx-deployment
+
+kubectl rollout history deployment nginx-deployment --revision=2
+
+Rolling Back to a Previous Revision
+kubectl rollout undo deployment nginx-deployment
+
+kubectl rollout history deployment nginx-deployment
+kubectl rollout history deployment nginx-deployment --revision=4
+
+kubectl get deployment nginx-deployment
+
+kubectl describe deployment nginx-deployment
+# Check container image version/tag
+
+k rollout undo deployment nginx-deployment --to-revision=1
+
+1 -> nginx:1.14.2
+2 -> nginx:1.16.1
+3 -> nginx:xxxx
+
+undo = 3-1 = 2
+
+1 -> nginx:1.14.2
+3 -> nginx:xxxx
+4 -> nginx:1.16.1
+
+undo = 1
+
+3 -> nginx:xxxx
+4 -> nginx:1.16.1
+5 -> nginx:1.14.2
+Scaling deployment
+kubectl scale deployment nginx-deployment --replicas=10
+kubectl scale deployment nginx-deployment --replicas=1
+kubectl get deployment nginx-deployment
+kubectl get rs
+kubectl get pods | grep nginx-deployment
+kubectl describe deployment nginx-deployment
+
+
+** Jobs
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: busybox:1.28
+        imagePullPolicy: IfNotPresent
+        command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+      restartPolicy: Never
+  backoffLimit: 4
+
+kubectl apply -f job.yaml
+kubectl describe jobs/pi
+
+** CronJobs
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox:1.28
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+
+kubectl apply -f cronjob.yaml
+kubectl get cronjob hello
+kubectl get jobs -w
+kubectl delete -f cronjob.yaml
+
+
+Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+type: kubernetes.io/basic-auth
+stringData:
+  username: admin
+  password: t0p-Secret
+
+k apply -f secret
+k describe secret mysecret
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dapi-test-pod03
+spec:
+  containers:
+  - name: test-container
+    image: gcr.io/google-samples/node-hello:1.0
+    envFrom:
+      - secretRef:
+          name: mysecret
+  
+k apply -f secret-pod
+
+liveness.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -f /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+k apply -f liveness.yaml
+For the first 30 seconds of the container's life, there is a /tmp/healthy file. So during the first 30 seconds, the command cat /tmp/healthy returns a success code. After 30 seconds, cat /tmp/healthy returns a failure code.
+ Later, verify that the container has been restarted.
+Readiness.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: readiness
+  name: readiness-exec
+spec:
+  containers:
+  - name: readiness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+
+## NodeSelector
+k label node worker-node-1.example.com disktype=ssd
+k get nodes -l disktype=ssd
+
+kubectl get nodes --show-labels
+apiVersion: v1
+kind: Pod
+metadata:
+  name: node-selector-pod
+spec:
+  #Using Node labels
+  nodeSelector:
+     disktype: ssd  
+  containers:
+  - image: nginx
+    name: pod
+    ports:
+    - containerPort: 80
+
+
+k get pod node-selector-pod -o wide
+
+## Node Affinity 
+
+k label node worker-node-2.example.com disktype=ssd
+k label node worker-node-1.example.com network=fast
+k get nodes -l network=fast
+k get nodes -l disktype=ssd
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  name: affinity-pod
+spec:
+  containers:
+  - image: nginx
+    name: pod
+    ports:
+    - containerPort: 80
+  affinity: 
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: network
+            operator: In  
+            values: 
+            - fast
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference: 
+          matchExpressions:
+          - key: disktype
+            operator: In
+            values:
+            - ssd
+
+## Taint and Tolerance 
+
+
+Taint a node:
+kubectl taint node worker-node-2.example.com type=gpu:NoSchedule
+kubectl taint node worker-node-1.example.com type=cpu:NoSchedule
+
+
+Tolerate the taint in a Pod
+apiVersion: v1                  
+kind: Pod                       
+metadata:                       
+  name: test-taint-pod
+spec:                           
+  containers:
+  - name: nginxcontainer
+    image: nginx 
+  tolerations: 
+  - key: type
+    operator: Equal
+    value: gpu
+    effect: NoSchedule

@@ -1,0 +1,53 @@
+- name: Configure Repositories and Patch Servers
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    # Debian/Ubuntu: Add a custom APT repository
+    - name: Add APT repository (Debian/Ubuntu)
+      apt_repository:
+        repo: 'ppa:deadsnakes/ppa'
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # RHEL/CentOS: Add a YUM repository
+    - name: Add YUM repository (RHEL/CentOS)
+      yum_repository:
+        name: custom-repo
+        description: Custom Repo
+        baseurl: http://your.repo.url/path/
+        gpgcheck: no
+        enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    # Update package cache and upgrade (as before)
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Upgrade all packages to the latest version (Debian/Ubuntu)
+      apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Update package cache (RHEL/CentOS)
+      yum:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Upgrade all packages to the latest version (RHEL/CentOS)
+      yum:
+        name: '*'
+        state: latest
+      when: ansible_os_family == "RedHat"
+
+  handlers:
+  - name: Send notification email
+    mail:
+      host: localhost
+      port: 25
+      to: "admin@example.com"
+      subject: "Ansible Notification - Task Completed"
+      body: "The patching task on {{ inventory_hostname }} has completed successfully."
