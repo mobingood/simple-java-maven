@@ -31,8 +31,9 @@ resource "aws_security_group" "example_sg" {
 resource "aws_instance" "example" {
   ami           = "ami-0c55b159cbfafe1f0" # Replace with your AMI ID
   instance_type = "t2.micro"
+  count = 3
   key_name      = "your-key" # Replace with your SSH key name
-  security_groups = [aws_security_group.example_sg.name]
+  security_groups = [aws_security_group.example_sg.name,]
 
   tags = {
     Name = "AWS-Instance"
