@@ -23,3 +23,20 @@ pipeline {
         }
     }
 }
+pipeline {
+    agent any
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    try {
+                        sh 'deploy-script.sh'
+                    } catch (Exception e) {
+                        echo 'Deployment failed, initiating rollback...'
+                        sh 'rollback-script.sh'
+                    }
+                }
+            }
+        }
+    }
+}

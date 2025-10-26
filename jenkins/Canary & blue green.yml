@@ -1,0 +1,154 @@
+Canary & blue green 
+Deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-v1
+  labels:
+    app: my-app
+    version: v1
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: my-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: my-app
+        version: v1
+    spec:
+      containers:
+        - name: my-app
+          image: my-app:1.0
+          ports:
+            - containerPort: 80
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-v2
+  labels:
+    app: my-app
+    version: v2
+spec:
+  replicas: 1  # Canary gets only 1 pod
+  selector:
+    matchLabels:
+      app: my-app
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: my-app
+        version: v2
+    spec:
+      containers:
+        - name: my-app
+          image: my-app:2.0
+          ports:
+            - containerPort: 80
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+kubectl apply -f deployment-v1.yaml
+kubectl apply -f service.yaml
+
+
+kubectl apply -f deployment-v2.yaml
+
+kubectl logs deployment/my-app-v2
+
+kubectl scale deployment my-app-v2 --replicas=5
+kubectl delete deployment my-app-v1
+
+
+
+
+***************** . BLUE GReen deplo *****************
+
+# my-app-blue.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-blue
+  labels:
+    app: my-app
+    version: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: my-app
+        version: blue
+    spec:
+      containers:
+        - name: my-app
+          image: my-app:1.0
+          ports:
+            - containerPort: 80
+
+
+# my-app-green.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-green
+  labels:
+    app: my-app
+    version: green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+      version: green
+  template:
+    metadata:
+      labels:
+        app: my-app
+        version: green
+    spec:
+      containers:
+        - name: my-app
+          image: my-app:2.0
+          ports:
+            - containerPort: 80
+
+# my-app-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+    version: blue   # 👈 Change to "green" to switch traffic
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+kubectl patch service my-app-service \
+  -p '{"spec":{"selector":{"app":"my-app","version":"green"}}}'
+
+kubectl patch service my-app-service \
+  -p '{"spec":{"selector":{"app":"my-app","version":"blue"}}}'

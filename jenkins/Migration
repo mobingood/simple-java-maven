@@ -1,0 +1,258 @@
+High-level approach (two parallel tracks)
+
+Server → Cloud (VMs, storage, networking) — focus on infrastructure & operations. See the 7-R migration options (Rehost, Replatform, Refactor, Retire, Retain, Repurchase, Relocate). 
+AWS Documentation
+
+App → Kubernetes — focus on application modernization: inventory, containerize, package (Helm/manifests), storage & config, CI/CD, run on a managed K8s or self-managed cluster. 
+Mirantis
++1
+
+Part A — Migrating on-prem servers to cloud (practical steps)
+1) Plan & assess
+
+Make an inventory: OS, apps, CPU/ram, disk, network, dependencies, storage I/O, licensing, backup retention, compliance.
+
+Decide migration strategy per workload (7-R). Lift-and-shift (rehost) is fastest; refactor/replatform gives long-term benefits but costs more. 
+AWS Documentation
+
+2) Choose a cloud and migration tools
+
+Major providers & tools:
+
+AWS: AWS Application Migration Service (MGN), Migration Hub.
+
+Azure: Azure Migrate.
+
+GCP: Migrate for Compute Engine / Migration Center.
+
+Third-party: VMware HCX, Carbonite/Zerto, CloudEndure (etc.).
+Choose based on current stack (e.g., VMware on-prem → VMware HCX or AWS MGN). 
+Adivi Corporation
++1
+
+3) Network & security mapping
+
+Design VPC/subnet structure, VPN/Direct Connect or ExpressRoute, or hybrid connectivity.
+
+Map firewall rules, load balancers, NAT, public IP allocation, security groups, IAM/roles, KMS/key management and compliance (GDPR, HIPAA as applicable).
+
+4) Data migration
+
+For large datasets use direct transfer/offline appliances or accelerated network transfer services offered by cloud provider. Decide sync/winback approach (rsync, db replication, DB-level migration tools).
+
+Freeze windows or cutover plan: plan a final sync and cutover with rollback steps.
+
+5) Migrate VMs
+
+Use provider migration tools to replicate and cutover VMs (agentless or agent-based depending on tool). Test boot, validate apps, and run performance tests. 
+StratusGrid
+
+6) Runbooks & validation
+
+Smoke tests, monitoring baseline, performance validation, and security scanning. Create runbooks for rollback and for DNS cutover.
+
+7) Optimize & operate
+
+Right-size instances, adopt autoscaling, leverage managed DBs / managed services where it makes sense (replatform) to reduce ops burden. 
+Google Cloud
+
+Part B — Migrating on-prem apps to Kubernetes (step-by-step)
+0) Choose your Kubernetes environment
+
+Managed: EKS / AKS / GKE — faster Day-1 and Day-2 ops.
+
+Self-managed: kubeadm, kops, or on-prem distributions (Rancher, OpenShift) if you need on-prem. Managed is usually faster for cloud migrations. 
+Mirantis
+
+1) Assess applications & dependencies
+
+For each app: monolith vs microservice, language/runtime, external DBs, stateful vs stateless, file storage needs, third-party services, config & secrets, affinity/tolerations, sidecars (logging/monitoring).
+
+Draw a dependency map — this determines whether you can containerize a single service or must migrate several together.
+
+2) Containerize (one app at a time)
+
+Create a Dockerfile and run locally. Keep images minimal, multi-stage builds for compiled languages, non-root user, healthchecks. Example (Node.js):
+
+# example Dockerfile (Node)
+FROM node:18 AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+COPY . .
+CMD ["node", "server.js"]
+
+
+Build and push to a registry (ECR/GCR/ACR/Docker Hub):
+docker build -t myapp:1.0 .
+docker tag myapp:1.0 <registry>/myapp:1.0
+docker push <registry>/myapp:1.0
+(These are standard steps — plenty of guides walk through provider specifics). 
+overcast blog
+
+3) Create Kubernetes manifests / Helm chart
+
+Start with a simple Deployment, Service, ConfigMap, Secret, and Ingress. Use Helm for templating and releases.
+
+Example minimal deployment.yaml fragment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: myapp }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: myapp } }
+  template:
+    metadata: { labels: { app: myapp } }
+    spec:
+      containers:
+      - name: myapp
+        image: <registry>/myapp:1.0
+        ports: [{ containerPort: 3000 }]
+        livenessProbe: { httpGet: { path: /health, port: 3000 }, initialDelaySeconds: 30 }
+
+
+Use Helm to templatize values (image tags, resource requests/limits, replicas). Many teams migrate from Docker-Compose to Helm charts to get repeatable deployments. 
+aahil13.hashnode.dev
++1
+
+4) Storage & stateful data
+
+For databases, either:
+
+Keep DBs outside Kubernetes (managed DBs in cloud) and point apps there, or
+
+Run stateful DBs in K8s using StatefulSets + PersistentVolumes (CSI drivers), but understand operational overhead.
+
+Use volume snapshots and data-migration tools for PVs when moving stateful workloads.
+
+5) Secrets & config
+
+Use Kubernetes Secrets (or an external vault — HashiCorp Vault, cloud KMS/Secret Manager) for production secrets. Store non-sensitive config in ConfigMaps.
+
+6) CI/CD
+
+Build pipeline: source → build image → push registry → Helm/chart update → helm upgrade --install or kubectl apply. Use tools like GitHub Actions, GitLab CI, Jenkins, or Cloud build services. Include image signing and scanning.
+
+7) Observability & security
+
+Logging: Fluentd/Filebeat → central log store (ELK, Datadog, Cloudwatch).
+
+Metrics: Prometheus + Grafana.
+
+Tracing: OpenTelemetry/Jaeger.
+
+Container security: image scanning (Trivy), runtime security (Falco), network policies (Calico), pod security policies (or PodSecurity admission). 
+Mirantis
+
+8) Backups & disaster recovery
+
+Use Velero for cluster resource + PV backup/restore and migrations between clusters; for enterprise app mobility, consider Kasten (K10) / Veeam Kasten. These let you backup namespaces and restore them into other clusters/clouds. 
+velero.io
++1
+
+9) Progressive rollout & cutover
+
+Start with non-production clusters. For production, use Canary or Blue-Green deployments to reduce risk. Validate, run load tests, and then cut traffic gradually (Ingress or service mesh routing).
+
+10) Day-2 operations
+
+Add autoscaling (HPA/VPA), resource quotas, pod disruption budgets, cost monitoring, and regular security scans and patching.
+
+Practical migration checklist (copyable)
+
+Assessment
+
+ Inventory servers/apps, dependencies, licenses.
+
+ Map network and firewall rules.
+
+Decisions
+
+ Choose cloud provider & managed K8s or self-managed.
+
+ Decide 7-R per app (Rehost / Replatform / Refactor / Retire etc.). 
+AWS Documentation
+
+Execution
+
+ Set up cloud networking & IAM.
+
+ Set up container registry.
+
+ Containerize app; push images. 
+overcast blog
+
+ Create Helm chart/manifests; deploy to staging. 
+aahil13.hashnode.dev
+
+ Configure persistent volumes, secrets, ingress.
+
+ Install monitoring, logging, tracing. 
+Mirantis
+
+ Backup plan (Velero/Kasten). 
+velero.io
++1
+
+ Run load & failover tests.
+
+ Cutover, monitor, optimize.
+
+Recommended tools & resources (quick list)
+
+Cloud migration: AWS Application Migration Service (MGN), Azure Migrate, Google Migrate. 
+StratusGrid
++1
+
+Containerization / build: Docker, BuildKit, multi-stage builds. 
+overcast blog
+
+Kubernetes packaging: Helm, Kustomize. 
+Medium
+
+Backups / mobility: Velero (open source), Kasten (enterprise). 
+velero.io
++1
+
+Observability: Prometheus + Grafana, Fluentd/ELK, Jaeger (tracing). 
+Mirantis
+
+Quick example: from Docker → Helm → K8s (commands)
+
+Build image: docker build -t myreg/myapp:1.0 .
+
+Push: docker push myreg/myapp:1.0
+
+Create Helm chart skeleton: helm create myapp
+
+Edit values.yaml to set image.repository: myreg/myapp and image.tag: 1.0
+
+Deploy: helm upgrade --install myapp ./myapp -n production --create-namespace
+
+Check rollout: kubectl rollout status deploy/myapp -n production
+
+(That flow is the standard developer path when moving an app to Kubernetes.) 
+aahil13.hashnode.dev
+
+Common pitfalls & how to avoid them
+
+Pushing everything at once — migrate incrementally; start with stateless services.
+
+Ignoring networking differences — assume on-prem IPs/hostnames will change; prepare DNS & service discovery.
+
+Underestimating stateful services — plan data migration carefully or prefer managed DBs.
+
+No rollback plan — always have backups + automated rollback (helm rollbacks, previous image tags).
+
+Missing observability — add logging & metrics before cutover.
+
+If you want, next steps I can do right now
+
+Pick one and I’ll act on it in this session (no waiting):
+
+Create a migration assessment template you can run against your infra (spreadsheet checklist).
+
+Draft a Dockerfile + Helm chart skeleton for one of your apps (tell me language/runtime — no need to repeat full dependency list).
+
+Produce a cutover runbook for a single VM or service (with commands to replicate, switch DNS, and rollback).

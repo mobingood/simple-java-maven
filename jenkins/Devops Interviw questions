@@ -3,9 +3,19 @@ GIT
 what is git branch stratery 
 how many types of git branches 
 what is hot fix branch 
+what is git rebase 
+how can you, squash multiple merges as one. 
 if you push the change to wrong branch how do we fix 
 hwo do you push repo to a specifi branch instread of root branch 
 what is different between git pull and git fetch get head git 
+How do you recover a deleted branch that was not merged?
+Source Control Best Practices
+    You are working on a team where everyone uses Git for source control. Recently, conflicts have been increasing due to multiple developers working on the same files. How would you address this situation to minimize conflicts and improve collaboration?
+
+What has to be run to squash the last N commits into a single commit?
+
+
+GIT Lab and Git actions 
 
 AWS : 
 aws services : how do tyou use internet gateway to provice access to vpc 
@@ -20,6 +30,8 @@ can you explain 3 tier architecture ?
 we have multiple instance running in diffeerent zone, hwo do you consider load balancer to distribute the traffic ? 
 hwo may types of load balancer 
 what are the uses of differnt load balancer 
+Cost Management and Optimization
+
 
 
 Kubernetes : 
@@ -39,15 +51,39 @@ in DR situtation how do you confirue your deployment
 what is blue green deplymetn and canary or rolling update 
 How many types of container in kubernets 
 what is the use of INIT continer 
-Can we set alina in kubernetes ? 
+Can we set alias in kubernetes ?
+Kubernetes Resource Management
+
+    Troubleshooting Deployment Issues in Azure Kubernetes Service
+    You have deployed a new version of your microservices application in Azure Kubernetes Service (AKS). After deployment, users report intermittent connectivity issues. Walk through how you would diagnose and resolve these issues.
+    Ideal Answer (5 Star)
+    To diagnose and resolve connectivity issues in AKS, I would follow these steps:
+    1. **Check Pod Status**: Use `kubectl get pods` to check the status of the pods. Look for any pods in CrashLoopBackOff or Error states.
+    2. **Inspect Pod Logs**: Use `kubectl logs ` to view logs for any errors or warnings that might indicate what is causing the issue.
+    3. **Check Networking Configuration**: Ensure that the Network Policies are correctly configured. Use `kubectl describe networkpolicy` to review the policies.
+    4. **Verify Service and Endpoints**: Use `kubectl get svc` and `kubectl get endpoints` to ensure the services are correctly routing traffic to the pods.
+    5. **Monitor AKS Metrics**: Use Azure Monitor to check for CPU, memory, and network usage spikes or irregularities that might affect connectivity.
+    6. **Review Ingress Controller**: If using an ingress controller, check its configuration with `kubectl describe ingress ` to ensure it is properly routing requests.
+    7. **Consult AKS Diagnostics**: Use Azure's Diagnostics and Insights to check for any underlying infrastructure issues.
+    8. **Perform a Rollback**: If issues persist, consider rolling back to the previous stable deployment using `kubectl rollout undo deployment/`.
+    By following these steps, I can methodically identify and resolve the connectivity issues affecting the AKS deployment.
+
+
 what are the different types of services in kubernetes 
 if we want to connet rds with kuybenets which services we can use 
 when we use NODE pod services 
 any load balancer services
+how can we migrate applicaiton to containers 
+What is docker compose file and how it works?
+If a pod exceeds its memory "limit" what signal is sent to the process?
+What is the difference b/w config map & secret? give examples
+
+
 
 
 Jenkins : 
 
+Implementing Canary Releases with Jenkins
 HOW CI and CD work, how it configured 
 what are the stages of jenkins 
 if we have java whch tool or plugin we can use in jenkins 
@@ -63,6 +99,11 @@ early Job we completing in 1o mins now its taking 30 mins, what could be possibl
 how do we configure blue green deployment 
 how do we clean up old builds
 how many parallel jobs can run in Jenkins 
+how to configure dependencies for cicd pipeline
+how to deploy build in multiple environments 
+Let's say there is a broken build in the Jenkins project, then what can be done?
+
+
 
 
 AWS
@@ -102,3 +143,18 @@ how can we resolve conflit in git, and what kind of conflits we can receive
 what is the flow of pipeline and what are the stages of pipeline
 
 
+
+Docker : 
+
+Can you differentiate between Daemon Logging and Container Logging
+What is considered best practice for image tagging?
+Explain Replica set in the context of Kubernetes
+What are the various things that can be done to increase Kubernetes security?
+Can you differentiate between Daemon Logging and Container Logging
+How will you secure your Docker containers?
+
+
+Terraform 
+
+What do you mean by Terragrunt, list some of its use cases?
+how terrafrom look and validate modules 

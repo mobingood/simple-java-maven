@@ -1,0 +1,38 @@
+gitlab pipeline
+
+variable:
+      IMAGE_NAME: xxxxxxx
+      IMAGE_TAG: xxxxxxx
+
+stages: 
+   - test
+   - build 
+
+run_tests:
+   stage: test
+   image: pythong:xxx
+   before_script:
+      - apt-get update && apt-get install make
+   script:
+      - make test
+
+build_image:
+   stage: build
+   image: docker:xxx
+   services:
+      - xxx 
+   before_script:
+      - docker login -u username -p password
+   
+   script:
+      - docker build -t xxx_name:xxx_tag .
+      - docker push path/to/the/repo
+
+deploy:
+   stage : deploy 
+   script:
+      - ssh -o StrictHostKeyChecking=no -i $SSH_Key root@hostname "
+         docker login -u user_name -p password &&
+         docker ps -aq | xargs docker stop | xarg s docker rm
+         docker run -p 5000:5000 $IMAGE_Name:$IMAGE_TAG
+      "

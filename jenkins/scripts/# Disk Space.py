@@ -22,3 +22,39 @@ def check_disk_space():
             print(f"{parts[file_system_index]:<30} {parts[avail_index]:>10}")
 
 check_disk_space()
+
+
+#!/usr/bin/env python3
+import os
+import sys
+
+def find_symlinks(root_dir):
+    """
+    Recursively find all symbolic links in a given directory.
+    """
+    for dirpath, dirnames, filenames in os.walk(root_dir, followlinks=False):
+        # Check directories
+        for d in dirnames:
+            full_path = os.path.join(dirpath, d)
+            if os.path.islink(full_path):
+                print(f"Directory symlink: {full_path} -> {os.readlink(full_path)}")
+
+        # Check files
+        for f in filenames:
+            full_path = os.path.join(dirpath, f)
+            if os.path.islink(full_path):
+                print(f"File symlink: {full_path} -> {os.readlink(full_path)}")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <directory>")
+        sys.exit(1)
+
+    root_directory = sys.argv[1]
+
+    if not os.path.isdir(root_directory):
+        print(f"Error: {root_directory} is not a valid directory.")
+        sys.exit(1)
+
+    find_symlinks(root_directory)

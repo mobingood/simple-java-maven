@@ -107,3 +107,24 @@ def deploy_aws_instances(ami_id, instance_type, key_name, security_group, subnet
 # get_aws_inventory()
 # get_servicenow_inventory("your-instance", "your-username", "your-password")
 # deploy_aws_instances("ami-12345678", "t2.micro", "my-key", "sg-12345678", "subnet-12345678", count=2)
+
+
+import requests
+
+def get_post_details():
+    url = "https://jsonplaceholder.typicode.com/posts/1"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise error for bad status codes
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print("Error fetching data:", e)
+        return None
+
+# Example usage:
+post = get_post_details()
+print(post)
+
+
+
