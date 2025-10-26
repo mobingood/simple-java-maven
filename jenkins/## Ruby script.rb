@@ -84,3 +84,31 @@ if File.exist?(file_name)
 else
   puts "Error: File not found!"
 end
+
+# Package check 
+
+# Ask the user for the package name
+puts "Enter the package name to check:"
+package = gets.chomp
+
+# Detect the package manager type
+if File.exist?("/usr/bin/dpkg")
+  # For Debian/Ubuntu systems
+  check_cmd = "dpkg -l | grep -w #{package}"
+elsif File.exist?("/usr/bin/rpm")
+  # For RedHat/CentOS systems
+  check_cmd = "rpm -qa | grep -w #{package}"
+else
+  puts "Unsupported system: No dpkg or rpm found!"
+  exit
+end
+
+# Run the command and capture output
+result = `#{check_cmd}`
+
+# Check if output is empty or not
+if result.empty?
+  puts "❌ Package '#{package}' is NOT installed."
+else
+  puts "✅ Package '#{package}' is installed."
+end

@@ -40,54 +40,6 @@ resource "aws_instance" "example" {
   }
 }
 
-## vshere deployment
-
-provider "vsphere" {
-  user           = "administrator@vsphere.local"
-  password       = "your-password"
-  vsphere_server = "your-vcenter-server"
-  allow_unverified_ssl = true
-}
-
-resource "vsphere_virtual_machine" "vm" {
-  name             = "VMware-Instance"
-  resource_pool_id = "your-resource-pool-id"
-  datastore_id     = "your-datastore-id"
-
-  num_cpus = 2
-  memory   = 4096
-  guest_id = "other3xLinux64Guest" # Adjust for your OS type
-
-  network_interface {
-    network_id   = "your-network-id"
-    adapter_type = "vmxnet3"
-  }
-
-  disk {
-    label            = "disk0"
-    size             = 20
-    eagerly_scrub    = false
-    thin_provisioned = true
-  }
-
-  clone {
-    template_uuid = "your-template-uuid" # Replace with your VM template
-
-    customize {
-      linux_options {
-        host_name = "vm-example"
-        domain    = "local"
-      }
-      network_interface {
-        ipv4_address = "192.168.1.100"
-        ipv4_netmask = 24
-      }
-      ipv4_gateway = "192.168.1.1"
-    }
-  }
-}
-
-
 
 #############################################################
 
@@ -187,10 +139,28 @@ resource "aws_instance" "multi_region_instance" {
 
   tags = {
     Name = "Instance-${each.key}"
+    Env = 
+    
   }
 }
 
 
+# Create an EC2 instance with template 
+resource "aws_instance" "web" {
+  count         = 5 ## Number of instances 
+  ami           = "ami-0c55b159cbfafe1f0"  # Replace with valid AMI ID for your region
+  instance_type = "t2.micro"
+
+  # Use templatefile() to render the user data
+  user_data = templatefile("${path.module}/userdata.sh.tftpl", {
+    app_name    = var.app_name
+    environment = var.environment
+  })
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}"
+  }
+}
 
 ###################################################################################
 
@@ -220,4 +190,154 @@ resource "aws_instance" "multi_named" {
 }
 
 
+provider "aws" {
+  region = var.region
+}
+
+# -----------------------------
+# 1️⃣ Create VPC
+# -----------------------------
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  tags = {
+    Name = "main-vpc"
+  }
+}
+
+# -----------------------------
+# 2️⃣ Create Subnets
+# -----------------------------
+resource "aws_subnet" "public_1" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "${var.region}a"
+  tags = {
+    Name = "public-subnet-1"
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "${var.region}b"
+  tags = {
+    Name = "public-subnet-2"
+  }
+}
+
+# -----------------------------
+# 3️⃣ Create Internet Gateway
+# -----------------------------
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+  tags = {
+    Name = "main-igw"
+  }
+}
+
+# -----------------------------
+# 4️⃣ Create Route Table and Associate
+# -----------------------------
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+  tags = {
+    Name = "public-rt"
+  }
+}
+
+resource "aws_route_table_association" "public_1" {
+  subnet_id      = aws_subnet.public_1.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_2" {
+  subnet_id      = aws_subnet.public_2.id
+  route_table_id = aws_route_table.public.id
+}
+
+# -----------------------------
+# 5️⃣ Security Group for ALB
+# -----------------------------
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Allow HTTP traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "alb-sg"
+  }
+}
+
+# -----------------------------
+# 6️⃣ Create Target Group
+# -----------------------------
+resource "aws_lb_target_group" "tg" {
+  name     = "my-target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+  tags = {
+    Name = "alb-tg"
+  }
+}
+
+# -----------------------------
+# 7️⃣ Create Application Load Balancer
+# -----------------------------
+resource "aws_lb" "app_lb" {
+  name               = "my-app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = [aws_subnet.public_1.id, aws_subnet.public_2.id]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "my-app-lb"
+  }
+}
+
+# -----------------------------
+# 8️⃣ Create Listener
+# -----------------------------
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.app_lb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
 
