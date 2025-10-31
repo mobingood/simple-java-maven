@@ -1,7 +1,7 @@
-## Ruby script
+## Ruby_script
 
 #!/usr/bin/env ruby
-
+require_relative
 require 'etc'
 
 # Configuration

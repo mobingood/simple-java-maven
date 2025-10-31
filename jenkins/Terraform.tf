@@ -140,7 +140,7 @@ resource "aws_instance" "multi_region_instance" {
   tags = {
     Name = "Instance-${each.key}"
     Env = 
-    
+
   }
 }
 
@@ -341,3 +341,68 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+
+
+MultiZone Server with high avalialvltiy 
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# 1️⃣ Get Availability Zones
+data "aws_availability_zones" "available" {}
+
+# 2️⃣ Create a VPC
+resource "aws_vpc" "multi_az_vpc" {
+  cidr_block = "10.0.0.0/16"
+}
+
+# 3️⃣ Create Subnets in different AZs
+resource "aws_subnet" "multi_az_subnets" {
+  count             = 2
+  vpc_id            = aws_vpc.multi_az_vpc.id
+  cidr_block        = cidrsubnet(aws_vpc.multi_az_vpc.cidr_block, 8, count.index)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+}
+
+# 4️⃣ Security Group
+resource "aws_security_group" "ec2_sg" {
+  name        = "multi-az-sg"
+  description = "Allow SSH"
+  vpc_id      = aws_vpc.multi_az_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# 5️⃣ Create EC2 Instances in multiple AZs
+resource "aws_instance" "multi_az_instances" {
+  count         = 2
+  ami           = "ami-0c55b159cbfafe1f0" # Example: Amazon Linux 2
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.multi_az_subnets[count.index].id
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  tags = {
+    Name = "multi-az-instance-${count.index + 1}"
+  }
+}
+
+# 6️⃣ (Optional) Load Balancer for HA
+resource "aws_lb" "app_lb" {
+  name               = "multi-az-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.ec2_sg.id]
+  subnets            = aws_subnet.multi_az_subnets[*].id
+}
