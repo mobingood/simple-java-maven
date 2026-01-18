@@ -1,0 +1,38 @@
+gittlab-ci.yaml
+
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  APP_ENV: production
+
+build_job:
+  stage: build
+  image: python:3.11
+  script:
+    - pip install -r requirements.txt
+    - python setup.py build
+  artifacts:
+    paths:
+      - build/
+
+test_job:
+  stage: test
+  image: python:3.11
+  script:
+    - pip install -r requirements.txt
+    - pytest -v
+
+deploy_job:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying application..."
+    # Example only
+    - ./deploy.sh
+  when: manual
+  only:
+    - main

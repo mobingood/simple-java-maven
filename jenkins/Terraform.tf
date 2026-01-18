@@ -229,6 +229,29 @@ resource "aws_subnet" "public_2" {
   }
 }
 
+# ---------------------------
+# EBS Volume
+# ---------------------------
+resource "aws_ebs_volume" "my_volume" {
+  availability_zone = aws_instance.my_ec2.availability_zone
+  size              = 20                 # Size in GB
+  type              = "gp3"
+
+  tags = {
+    Name = "Extra-Volume"
+  }
+}
+
+# ---------------------------
+# Attach Volume to EC2
+# ---------------------------
+resource "aws_volume_attachment" "my_attachment" {
+  device_name = "/dev/sdf"               # Linux: /dev/sdf -> shows as /dev/xvdf
+  volume_id   = aws_ebs_volume.my_volume.id
+  instance_id = aws_instance.my_ec2.id
+
+  depends_on = [aws_instance.my_ec2]
+}
 # -----------------------------
 # 3️⃣ Create Internet Gateway
 # -----------------------------

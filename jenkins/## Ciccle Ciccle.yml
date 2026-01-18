@@ -1,0 +1,52 @@
+## Ciccle Ciccle
+version: 2.1
+
+executors:
+  docker-executor:
+    docker:
+      - image: circleci/python:3.8 # Base image for Python applications
+
+jobs:
+  build:
+    executor: docker-executor
+    steps:
+      - checkout # Check out the code from the repository
+      - setup_remote_docker: # Enable Docker layer caching
+          version: 20.10.7
+          docker_layer_caching: true
+      - run:
+          name: Install dependencies
+          command: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt # Install Python dependencies
+
+      - run:
+          name: Run tests
+          command: |
+            pytest tests/ # Run your test suite
+
+      - run:
+          name: Build Docker image
+          command: |
+            docker build -t my-app:${CIRCLE_SHA1} . # Build the Docker image
+
+  deploy:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Deploy to Production
+          command: |
+            echo "Deploying to production server..."
+            # Add your deployment command here (e.g., SSH into server and run deployment script)
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build:
+          context: my-context # Use context for environment variables
+      - deploy:
+          requires:
+            - build # Deploy only after the build job is successful
